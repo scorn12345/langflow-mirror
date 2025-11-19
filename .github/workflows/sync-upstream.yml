@@ -1,0 +1,28 @@
+name: Sync from Upstream
+
+on:
+  schedule:
+    - cron: '0 3 * * *'  # каждый день в 3:00 UTC
+  workflow_dispatch:     # можно запустить вручную
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Add upstream remote
+        run: |
+          git remote add upstream https://github.com/langflow-ai/langflow.git
+          git fetch upstream
+
+      - name: Sync main branch
+        run: |
+          git checkout main
+          git merge upstream/main
+          git push origin main
