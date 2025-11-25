@@ -21,6 +21,11 @@ jobs:
           git remote add upstream https://github.com/langflow-ai/langflow.git
           git fetch upstream
 
+      - name: Configure Git identity
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+
       - name: Sync main branch
         run: |
           git checkout main
