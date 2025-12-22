@@ -26,24 +26,26 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
 
-      - name: Merge upstream with strategy to avoid workflow updates
+     - name: Merge upstream but exclude workflow files
         run: |
           git checkout main
 
-          # Создаём временную ветку
-          git checkout -b temp-merge
-          git merge upstream/main
+          # Merge без автоматического коммита
+          git merge --no-commit --no-ff upstream/main
 
-          # Удаляем workflow-файлы, если они конфликтуют с политикой
-          if [ -d ".github/workflows" ]; then
-            git checkout HEAD -- .github/workflows/
-            echo "Restored your own workflows to avoid permission error."
-          fi
+          # Удаляем ВСЕ workflow-файлы, даже новые
+          rm -rf .github/workflows/
 
-          # Переключаемся обратно и перезаписываем main
-          git checkout main
-          git reset --hard temp-merge
+          # Восстанавливаем ТОЛЬКО СВОИ workflow-файлы (если они есть в репо)
+          # Например, только sync-upstream.yml
+          mkdir -p .github/workflows
+          curl -s -o .github/workflows/sync-upstream.yml \
+            https://raw.githubusercontent.com/scorn12345/langflow-mirror/main/.github/workflows/sync-upstream.yml
+
+          # Если были другие — добавь их аналогично
+
+          # Коммитим ТОЛЬКО безопасные изменения
+          git add .
+          git commit -m "chore: sync from upstream (workflows excluded)" || echo "No changes to commit"
+
           git push origin main
-
-          # Очистка
-          git branch -D temp-merge
