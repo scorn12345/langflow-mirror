@@ -33,19 +33,23 @@ jobs:
           # Merge без автоматического коммита
           git merge --no-commit --no-ff upstream/main
 
-          # Удаляем ВСЕ workflow-файлы, даже новые
-          rm -rf .github/workflows/
+          # Явно удаляем ВСЕ workflow-файлы через git (чтобы Git знал об удалении)
+          if [ -d ".github/workflows" ]; then
+            git rm -rf .github/workflows/ 2>/dev/null || true
+          fi
 
-          # Восстанавливаем ТОЛЬКО СВОИ workflow-файлы (если они есть в репо)
-          # Например, только sync-upstream.yml
+          # Создаём заново папку и добавляем ТОЛЬКО нужный workflow
           mkdir -p .github/workflows
           curl -s -o .github/workflows/sync-upstream.yml \
-            https://raw.githubusercontent.com/scorn12345/langflow-mirror/main/.github/workflows/sync-upstream.yml
+          https://raw.githubusercontent.com/scorn12345/langflow-mirror/main/.github/workflows/sync-upstream.yml
 
-          # Если были другие — добавь их аналогично
+          # Добавляем изменения в индекс
+          git add .github/workflows/
 
-          # Коммитим ТОЛЬКО безопасные изменения
-          git add .
-          git commit -m "chore: sync from upstream (workflows excluded)" || echo "No changes to commit"
-
-          git push origin main
+          # Коммитим только если есть изменения
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: sync from upstream (workflows excluded)"
+            git push origin main
+          else
+            echo "No changes to commit"
+          fi
